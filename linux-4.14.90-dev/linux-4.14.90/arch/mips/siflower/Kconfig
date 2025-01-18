@@ -106,6 +106,14 @@ config DT_SF19A28_FULLMASK_BPI_LUCI2_NEUTRAL
 	  The corresponding DTS file is at
 	  arch/mips/boot/dts/sf19a28_fullmask_bpi_luci2_neutral.dts
 
+config DT_SF19A28_FULLMASK_BPI_LUCI2_SIFLOWER
+	bool "Built-in device tree for sf19a28 fullmask bpi_luci2_siflower"
+	default n
+	select BUILTIN_DTB
+	help
+	  The corresponding DTS file is at
+	  arch/mips/boot/dts/sf19a28_fullmask_bpi_luci2_siflower.dts
+
 config DT_SF19A28_FULLMASK_A28_100M
 	bool "Built-in device tree for sf19a28 fullmask a28 100M"
 	default n

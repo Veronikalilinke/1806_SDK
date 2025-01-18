@@ -81,7 +81,6 @@ Class.extend({
 
 		return L.rpc.flush().then(function(info) {
 			var rv = {};
-			console.log(info)
 			$.extend(rv, info[0]);
 			$.extend(rv, info[1]);
 			$.extend(rv, info[2]);

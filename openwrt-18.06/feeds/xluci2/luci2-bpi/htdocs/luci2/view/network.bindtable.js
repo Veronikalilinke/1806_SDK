@@ -58,6 +58,19 @@ L.ui.view.extend({
 		params: [ 'config' ]
 	}),
 
+	lan_ip: L.rpc.declare({
+		object: 'network.interface.lan',
+		method: 'status',
+		expect: { 'ipv4-address': [] },
+		filter: function (data) {
+			var ip = '0';
+			if (data[0]) {
+				ip = data[0].address;
+			}
+			return ip;
+		},
+	}),
+
 	execute: function() {
 		var self = this;
 		L.globals.flag = 0;
@@ -246,64 +259,87 @@ L.ui.view.extend({
 
 				var mac = $('#lan_IpAddressReserve_chaddr_ctrl').val();
 				var ip = $('#lan_IpAddressReserve_ipaddr_ctrl').val();
+				var ip_segment = 1
 
-				if(mac.length == 0){
-					$("#lan_IpAddressReserve_chaddr_error").text(L.tr("Field must not be empty"));
-					return
-				}else if(!macColonRegex.test(mac)){
-					$("#lan_IpAddressReserve_chaddr_error").text(L.tr("Must be a valid MAC address"));
-					return
-				}else if(ip.length == 0){
-					$("#lan_IpAddressReserve_ipaddr_error").text(L.tr("Field must not be empty"));
-					return
-				}else if(!ipv4Regex.test(ip)){
-					$("#lan_IpAddressReserve_ipaddr_error").text(L.tr("Must be a valid IP address"));
-					return
-				}else if(name.length == 0){
-					$("#hostname_error").text(L.tr("Field must not be empty"));
-					return
-				}
+				var lanip='';
+				self.lan_ip().then(function (data) {
+					lanip = data;
+					var ip_gw = lanip.split('.');
+					var ip_input = ip.split('.');
+					var netmask = '255.255.255.0'.split('.');
+					var res0 = parseInt(ip_input[0]) & parseInt(netmask[0]);
+					var res1 = parseInt(ip_input[1]) & parseInt(netmask[1]);
+					var res2 = parseInt(ip_input[2]) & parseInt(netmask[2]);
+					var res3 = parseInt(ip_input[3]) & parseInt(netmask[3]);
+					var res_gw0 = parseInt(ip_gw[0]) & parseInt(netmask[0]);
+					var res_gw1 = parseInt(ip_gw[1]) & parseInt(netmask[1]);
+					var res_gw2 = parseInt(ip_gw[2]) & parseInt(netmask[2]);
+					var res_gw3 = parseInt(ip_gw[3]) & parseInt(netmask[3]);
 
-				// 验证 IP 地址和 MAC 地址是否已经被绑定
-                self.callLoad("bindtable").then(function(values) {
-                    var ipAlreadyBound = false;
-                    var macAlreadyBound = false;
-                    for(var key in values) {
-                        if(values[key].ip == ip && values[key].mac != mac) {
-                            ipAlreadyBound = true;
-                            break;
-                        }
-                        if(values[key].mac == mac && values[key].ip != ip) {
-                            macAlreadyBound = true;
-                            break;
-                        }
-                    }
-                    if(ipAlreadyBound) {
-                        L.ui.setting(true, L.tr("IP address is already bound to another MAC address."));
-                        setTimeout(function() {
-                            L.ui.setting(false);
-                        }, 840);
-                    } else if(macAlreadyBound) {
-                        L.ui.setting(true, L.tr("MAC address is already bound to another IP address."));
-                        setTimeout(function() {
-                            L.ui.setting(false);
-                        }, 840);
-                    } else {
-                        L.ui.setting(true, L.tr("Saving configuration..."));
-                        //验证通过再执行绑定操作
-                        var res = "/www/luci2/scripts/ip_mac.sh %s %s %s".format(mac,name,ip);
-                        $('#popwin').remove();
-                        self.ip_mac_cmd(res).then(function(){
-                            loadBoundTable();
-                        }).then(function() {
-                            setTimeout(function() {
-                                L.ui.setting(false);
-                            }, 840);
-                        });
-                    }
-                });
-            });
+					if (res0 !== res_gw0 || res1 !== res_gw1 || res2 !== res_gw2 || res3 !== res_gw3) {
+						ip_segment = 0;
+					}
 
+					if(mac.length == 0){
+						$("#lan_IpAddressReserve_chaddr_error").text(L.tr("Field must not be empty"));
+						return
+					}else if(!macColonRegex.test(mac)){
+						$("#lan_IpAddressReserve_chaddr_error").text(L.tr("Must be a valid MAC address"));
+						return
+					}else if(ip.length == 0){
+						$("#lan_IpAddressReserve_ipaddr_error").text(L.tr("Field must not be empty"));
+						return
+					}else if(!ipv4Regex.test(ip)){
+						$("#lan_IpAddressReserve_ipaddr_error").text(L.tr("Must be a valid IP address"));
+						return
+					}else if(ip_segment == 0){
+						$("#lan_IpAddressReserve_ipaddr_error").text(L.tr("Must be in the same segment as the IP address of Lan."));
+						return
+					}else if(name.length == 0){
+						$("#hostname_error").text(L.tr("Field must not be empty"));
+						return
+					}
+
+					// 验证 IP 地址和 MAC 地址是否已经被绑定
+					self.callLoad("bindtable").then(function(values) {
+						var ipAlreadyBound = false;
+						var macAlreadyBound = false;
+						for(var key in values) {
+							if(values[key].ip == ip && values[key].mac != mac) {
+								ipAlreadyBound = true;
+								break;
+							}
+							if(values[key].mac == mac && values[key].ip != ip) {
+								macAlreadyBound = true;
+								break;
+							}
+						}
+						if(ipAlreadyBound) {
+							L.ui.setting(true, L.tr("IP address is already bound to another MAC address."));
+							setTimeout(function() {
+								L.ui.setting(false);
+							}, 840);
+						} else if(macAlreadyBound) {
+							L.ui.setting(true, L.tr("MAC address is already bound to another IP address."));
+							setTimeout(function() {
+								L.ui.setting(false);
+							}, 840);
+						} else {
+							L.ui.setting(true, L.tr("Saving configuration..."));
+							//验证通过再执行绑定操作
+							var res = "/www/luci2/scripts/ip_mac.sh %s %s %s".format(mac,name,ip);
+							$('#popwin').remove();
+							self.ip_mac_cmd(res).then(function(){
+								loadBoundTable();
+							}).then(function() {
+								setTimeout(function() {
+									L.ui.setting(false);
+								}, 840);
+							});
+						}
+					});
+				});
+			});
 			$(".PopWin_box").off("input").on('input',"input", function() {
 				const currentLength = $(this).val().length;
 				if (currentLength > 0) {

@@ -276,7 +276,8 @@ L.ui.view.extend({
 			} else {
 				L.ui.dialog(
 					L.tr('Backup restore'), [
-						$('<p />').text(L.tr('Backup restoration failed, Make sure that you choose the file format for your platform.')),
+						$('<span />').text(L.tr('Backup restoration failed, Make sure that you choose the file format for your platform.')),
+						$('<span />').text(L.tr('Please use the .tar.gz file provided for generating backups.'))
 					], {
 						style: 'close',
 						close: function() {
@@ -358,7 +359,8 @@ L.ui.view.extend({
 		L.ui.dialog(L.tr('Really reset all changes?'), L.tr('This will reset the system to its initial configuration, all changes made since the initial flash will be lost!'), {
 			style: 'confirm',
 			confirm: function() {
-				self.startReset().then(L.ui.reconnect);
+				self.cmd("sh /bin/sf_reset.sh");
+				L.ui.reconnect();
 			}
 		});
 	},

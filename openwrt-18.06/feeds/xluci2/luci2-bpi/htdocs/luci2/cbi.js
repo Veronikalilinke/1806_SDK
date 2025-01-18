@@ -336,7 +336,7 @@
 			if (this.match(/^[a-zA-Z0-9_]+$/) != null)
 				return true;
 
-			validation.i18n('Must be a valid UCI identifier');
+			validation.i18n('Only supports combinations of letters, numbers, and underscores');
 			return false;
 		},
 

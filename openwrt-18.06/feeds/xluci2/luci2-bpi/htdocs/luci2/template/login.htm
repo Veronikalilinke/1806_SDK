@@ -31,7 +31,7 @@
 								<div class="InputContent" style="margin-left: -10px;"><!---->
 									<div id="userpassword" class="inputBox" style="box-shadow: 0 1px 8px rgba(0, 0, 0, .18);background-color: #d8d6d6;border-radius: 8px;">
 										<input id="userpassword_ctrl" autocomplete="off" unselectable=""
-											maxlength="2048" placeholder="<%:Please enter the router login password%>" type="password"
+											maxlength="2048" placeholder="<%:Enter the router password%>" type="password"
 											class="inputArea paddingleft_14"
 											style="width: 330px; height: 40px;top:10; text-align: left; padding-right: 14px; background: none; color: black; border-style: none;">
 										<!----> <!---->
@@ -45,14 +45,11 @@
 								</div> <!----> <!----> <!----> <!---->
 							</div>
 							<div id="loginbtn" class="enter marginleft_290 login_leader_border"></div>
-							<div class="login_info"><!---->
-								<div id="forgetpwd_page_link" class="fr"
-									style="text-decoration: underline; cursor: pointer;"><%:Forgot password?%></div>
-								<div id="login_error" style="display: none;">
-									<p style="margin-left: -80px;"><%:Wrong password!%></p>
-									<div class="login_error"></div>
-								</div>
-							</div> <!----> <!---->
+							<div id="forgetpwd_page_link" class="login_info" style="cursor: pointer;text-align: right;"><%:Forgot password?%></div>
+							<div class="login_info" id="login_error" style="display: none;text-align: left;">
+								<div class="login_error"></div>
+								<span><%:Wrong password!%></span>
+							</div>
 							<div class="login_info" id="forgetpwd_page_tips" style="display: none;text-align: left;"><%:If you forget your password, please long press the reset button to restore the factory settings%></div>
 						</div>
 					</div>
@@ -73,4 +70,4 @@
 				<!---->
 				<!---->
 			</div>
-		</div>
+			</div>

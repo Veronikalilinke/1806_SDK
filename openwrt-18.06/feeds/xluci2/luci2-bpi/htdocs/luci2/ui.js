@@ -330,7 +330,10 @@
 						L.ui.dialog(false);
 						images = null;
 					} else {
-						location.href = url;
+						setTimeout(function () {
+							console.log(url)
+							location.href = url;
+						}, 100000)
 					}
 				});
 			});
@@ -1063,7 +1066,7 @@
 			}
 
 			p = s.option(L.cbi.ListValue, 'proto', {
-				caption:	L.tr("model"),
+				caption:	L.tr("Mode"),
 				initial:	'dhcp'
 			})
 				.value('dhcp', L.tr("DHCP"))
@@ -1076,7 +1079,7 @@
 				var ori_value = L.uci.get('network', 'wan', 'proto');
 				if(ori_value == 'bridge' && value != 'bridge'){
 					L.uci.unset('network', 'wan', 'disabled');
-					L.uci.set('network', 'lan', 'ifname', 'eth0.1');
+					L.uci.set('network', 'lan', 'proto', 'static');
 					L.uci.load('dhcp').then(function(data) {
 						L.uci.unset('dhcp', 'lan', 'ignore');
 						L.uci.save();
@@ -1157,28 +1160,23 @@
 						}, 1000);
 					}, 2000);
 				} else if(value == 'static') {
-					L.uci.unset('network', 'wan', 'username');
-					L.uci.unset('network', 'wan', 'password');
 					L.uci.unset('network', 'wan', 'auto');
 					L.uci.set('network', 'wan', 'proto', 'static');
 				} else if(value == 'dhcp') {
 					L.uci.unset('network', 'wan', 'ipaddr');
 					L.uci.unset('network', 'wan', 'gateway');
 					L.uci.unset('network', 'wan', 'netmask');
-					L.uci.unset('network', 'wan', 'username');
-					L.uci.unset('network', 'wan', 'password');
 					L.uci.unset('network', 'wan', 'auto');
 					L.uci.set('network', 'wan', 'proto', 'dhcp');
 				} else if(value == 'bridge') {
 					L.uci.unset('network', 'wan', 'ipaddr');
 					L.uci.unset('network', 'wan', 'gateway');
 					L.uci.unset('network', 'wan', 'netmask');
-					L.uci.unset('network', 'wan', 'username');
-					L.uci.unset('network', 'wan', 'password');
 					L.uci.unset('network', 'wan', 'auto');
 					L.uci.set('network', 'wan', 'proto', 'bridge');
 					L.uci.set('network', 'wan', 'disabled', '1');
 					L.uci.set('network', 'lan', 'ifname', 'eth0.1 eth0.2');
+					L.uci.set('network','lan','proto','dhcp');
 					L.uci.load('dhcp').then(function() {
 						L.uci.set('dhcp', 'lan', 'ignore', '1');
 						L.uci.save();
@@ -1187,9 +1185,35 @@
 				L.uci.save();
 			}
 
+			var lanip='';
+			self.lan_ip().then(function (ip) {
+				lanip = ip;
+			});
+
 			var ipdata = s.option(L.cbi.InputValue, 'ipaddr', {
 				caption:      L.tr("IP address"),
-				datatype:    'ip4addr'
+				datatype:     function(str) {
+
+				if (!L.parseIPv4(str)){
+					return L.tr('Must be a valid IPv4 address');
+				}
+				var ip = lanip.split('.');
+				var parts = str.split('.');
+				var netmask = '255.255.255.0'.split('.');
+				var res0 = parseInt(parts[0]) & parseInt(netmask[0]);
+				var res1 = parseInt(parts[1]) & parseInt(netmask[1]);
+				var res2 = parseInt(parts[2]) & parseInt(netmask[2]);
+				var res3 = parseInt(parts[3]) & parseInt(netmask[3]);
+				var res_gw0 = parseInt(ip[0]) & parseInt(netmask[0]);
+				var res_gw1 = parseInt(ip[1]) & parseInt(netmask[1]);
+				var res_gw2 = parseInt(ip[2]) & parseInt(netmask[2]);
+				var res_gw3 = parseInt(ip[3]) & parseInt(netmask[3]);
+
+				if (res0 === res_gw0 && res1 === res_gw1 && res2 === res_gw2 && res3 === res_gw3) {
+					return L.tr('Must not be in the same segment as the IP address of Lan.');
+				}
+					return true;
+				}
 			}).depends('proto', function(v) { return (v == 'static');});
 
 			e = s.option(L.cbi.InputValue, 'netmask', {
@@ -1384,7 +1408,7 @@
 			};
 
 			uni = s.option(L.cbi.CheckboxValue, 'unicast', {
-				caption:      L.tr("Open unicast method to get ip"),
+				caption:      L.tr("Open unicast to get ip"),
 				optional:     true,
 				description:  L.tr("Do not choose under normal circumstances")
 			}).depends('proto', function(v) { return (v == 'dhcp');});
@@ -1493,12 +1517,12 @@
 					'margin-left': '30px',
 				});
 				$('.form-group').children('div:last-child').css({
-					width: 'auto',
+					width: '350px',
 					'margin-top': '7px',
 					'text-align': 'left',
 					color: 'gray',
 					'font-size': '12px',
-					'margin-left': '210px',
+					'margin-left': '220px',
 				});
 				$('#field_network_wan_wan_ipaddr').keyup(function () {
 					gateway.setError($('#field_network_wan_wan_gateway'), check($('#field_network_wan_wan_gateway').val()));
@@ -1514,7 +1538,7 @@
 					L.ui.lan_ip().then(function (now) {
 						var form = $('<p />').text(L.tr(`Bridge mode will disable its own DHCP function by default and will not modify the LAN IP. The current IP is`)+now+`，`+L.tr('Please keep the PC on the same network segment. Click OK to jump to the login page'));
 						L.ui.dialog(L.tr('Tips'), form, {
-							style: 'confirm',
+							style: 'onlyConfirm',
 							confirm: function() {
 								L.ui.dialog(false);
 								L.ui.setting(true, L.tr("Waiting for jump, please wait..."));
@@ -1545,7 +1569,7 @@
 				caption:      L.tr('2.4G')
 			});
 
-			var e = s.option(L.cbi.CheckboxValue, 'disabled', {
+			var e = s.option(L.cbi.CheckboxValue, 'disabled_hostapd', {
 				caption:      L.tr('Disabled Wifi'),
 				optional:     true
 			});
@@ -1567,6 +1591,12 @@
 			.value('sae-mixed', L.tr('WPA2/WPA3 mixed'));
 
 			e.save = function (sid) {
+				let radio_2_4 = $('#field_wireless_default_radio0_default_radio0_disabled_hostapd').is(':checked');
+				if(radio_2_4){
+					L.ui.do_cmd(`hostapd_cli -i wlan0 disable`);
+				}else{
+					L.ui.do_cmd(`hostapd_cli -i wlan0 enable`);
+				}
 				var encrypt = this.formvalue(sid);
 				L.uci.set('wireless', 'default_radio0', 'encryption', encrypt);
 				if (encrypt == 'sae')
@@ -1588,7 +1618,7 @@
 				caption:      L.tr('5G')
 			});
 
-			var e2 = s2.option(L.cbi.CheckboxValue, 'disabled', {
+			var e2 = s2.option(L.cbi.CheckboxValue, 'disabled_hostapd', {
 				caption:      L.tr('Disabled Wifi'),
 				optional:     true
 			});
@@ -1610,6 +1640,12 @@
 			.value('sae-mixed', L.tr('WPA2/WPA3 mixed'));
 
 			e2.save = function (sid) {
+				let radio_5 = $('#field_wireless_default_radio1_default_radio1_disabled_hostapd').is(':checked');
+				if(radio_5){
+					L.ui.do_cmd(`hostapd_cli -i wlan1 disable`);
+				}else{
+					L.ui.do_cmd(`hostapd_cli -i wlan1 enable`);
+				}
 				var encrypt = this.formvalue(sid);
 				L.uci.set('wireless', 'default_radio1', 'encryption', encrypt);
 				if (encrypt == 'sae')
@@ -2234,10 +2270,15 @@
 			};
 
 			//dev_name : devlist or wldevlist; data : html data
-			function list_device(dev_name, data) {
+			function list_device(dev_name, data, processedMacs) {
 				L.uci.callLoad(dev_name).then(function(results){
 					for(let dev_mac in results){
 						if(results[dev_mac].online == "1"){
+							if (processedMacs.has(dev_mac)) {
+								continue;
+							}
+							processedMacs.add(dev_mac);
+
 							var device_htm = data.replace(/Num/g,dev_mac);
 
 							//ip mac
@@ -2393,8 +2434,10 @@
 					cache:    true,
 					dataType: 'text',
 					success:  function(data) {
-						list_device('devlist', data);
-						list_device('wldevlist', data);
+						// Prevent the existence of identical items in devlist and wldevst
+						var processedMacs = new Set();
+						list_device('wldevlist', data, processedMacs);
+						list_device('devlist', data, processedMacs);
 					}
 				});
 			}).then(function(){

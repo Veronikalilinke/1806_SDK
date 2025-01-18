@@ -1,0 +1,34 @@
+{
+    "corporateName":"AC1200路由",
+    "corporateName_en":"AC1200 Router",
+    "abbreviation":"AC1200路由",
+    "abbreviation_en":"AC1200 Router",
+    "logo":"",
+    "ico_logo":"",
+    "QRcode":"code.png",
+    "maintitle":"欢迎使用AC1200路由",
+    "maintitle_en":"Welcome to AC1200 Router",
+    "subtitle":"双频并发全千兆Wi-Fi5路由芯片",
+    "subtitle_en":"Dual-band concurrent full Gigabit Wi-Fi 5 routing chip",
+    "feature":[
+        {
+            "title":"高集成度",
+            "describe":"内部集成了双核CPU、2x2 MIMO 2.4GHz&5GHz Wi-Fi基带和MAC、双频RF 、Balun、内置功率放大器、 低噪放、滤波器、收发切换器，为双频路由器提供了极致的单芯片解决方案",
+            "tile_en":"High integration",
+            "describe_en":"The A28 integrates dual-core CPU, 2x2 MIMO 2.4GHz & 5GHz Wi-Fi baseband and MAC, dual-band RF, Balun, built-in power amplifier, low-noise amplifier, filter, transceiver switch, and provides the ultimate single-frequency router for dual-band routers. Chip solutions."
+        },
+        {
+            "title":"性能出色",
+            "describe":"采用双核四处理器，最高主频1GHz，配合高速WiFi模块和硬件转发引擎，提供稳定的866Mbps+300Mbps无线接入和全千兆路由转发性能，支持最大128用户并发连接，工作温度范围-40℃到+125℃",
+            "title_en":"Outstanding performance",
+            "describe_en":"A28 uses dual-core quad processors, the highest frequency is 1GHz, with high-speed WiFi module and hardware forwarding engine, provides stable 866Mbps+300Mbps wireless access and full gigabit routing forwarding performance, supports up to 128 concurrent connections for users, operating temperature range -40℃ To +125℃."
+        },
+        {
+            "title":"接口丰富",
+            "describe":"外部接口丰富，同时支持4路天线（兼容802.11a/b/g/n/ac）,支持USB2.0、SPI、UART、I2C、PWM和RGMII等多种外部接口，提供多达数十个GPIO，满足复杂应用场景要求",
+            "title_en":"Rich interface",
+            "describe_en":"A28 has rich external interfaces, supports 4 antennas (compatible with 802.11a/b/g/n/ac), supports USB2.0, SPI, UART, I2C, PWM and RGMII and other external interfaces, providing up to dozens GPIO, to meet the requirements of complex application scenarios."
+        }
+    ],
+    "mainColor":"0"
+}
