@@ -821,9 +821,6 @@ li {
     background-color: #a0bcdb;
 }
 
-.InputComponent .InputContent .inputBox {
-    position: relative;
-}
 
 .InputContent>div:last-child, .switchbutton_box>div:last-child {
     display: table-cell;
@@ -993,7 +990,7 @@ li {
     background: linear-gradient(to bottom right, #ffffff, 80%, #E6EDFC);
     border-radius: 25px;
     width: 430px;
-    height: 470px;
+    height: 555px;
     max-width: 430px;
     padding: 3em 3em 5%;
     padding-bottom: 5%!important;
@@ -1007,7 +1004,7 @@ li {
     position: absolute; /* 允许图片定位 */
     top: -10px; /* 调整图片的垂直位置 */
     left: -1px;
-    height: 40%;
+    height: 35%;
     width: 100%;
     z-index: 1; /* 确保图片在背景之下 */
 }
@@ -1029,7 +1026,7 @@ li {
 
 #loginleadapp .lead_title1 {
     position: relative;
-    padding-top: 10px;
+    padding-top: 15px;
     width: 100%;
     font-size: 30px;
     color: #323232;
@@ -1075,7 +1072,7 @@ li {
     opacity: 0.3;
     color: #ffffff;
     min-height: auto;
-    padding-right: 32px !important;
+    padding-right: 43px !important;
 }
 
 .paddingleft_14 {
@@ -1538,8 +1535,6 @@ li {
 }
 
 .login_info {
-    position: relative;
-    min-height: 20px;
     width: 330px;
     font-size: 14px;
     color: #a0bcdb;

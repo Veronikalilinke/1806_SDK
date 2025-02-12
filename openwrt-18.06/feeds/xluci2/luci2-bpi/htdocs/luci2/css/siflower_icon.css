@@ -448,7 +448,7 @@ background-size: 350%;
     background-position: 49% 22.4%;
     background-size: 600%;
     margin-left: 307px;
-    margin-top: -46.5px;
+    margin-top: -45.5px;
     transform: rotate(-90deg);
 }
 .lead_tip{
@@ -463,8 +463,8 @@ background-size: 350%;
     width: 20px;
     height: 20px;
     background-image: url('../res/bananapi.png');
-    background-position: 49.8% 55%;
+    background-position: 49.8% 54.8%;
     background-size: 600%;
-    margin-top: -17.3px;
-    margin-left: -300px;
+    display: inline-block;
+    vertical-align: bottom;
 }

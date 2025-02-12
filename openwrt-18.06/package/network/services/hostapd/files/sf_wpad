@@ -153,6 +153,25 @@ generate_wpa_supplicant_args() {
 #    eval "echo \"$2: \${$2}\""
 }
 
+# disable interface with config disabled_hostapd
+disable_interface() {
+    sleep 5
+    def0_disabled=$(uci get wireless.default_radio0.disabled_hostapd 2>/dev/null)
+    def1_disabled=$(uci get wireless.default_radio1.disabled_hostapd 2>/dev/null)
+    if [ "${def0_disabled}" = "1" ];then
+        ifname0=$(uci get wireless.default_radio0.ifname 2>/dev/null)
+        if [ -n "${ifname0}" ];then
+            hostapd_cli -i $ifname0 disable
+        fi
+    fi
+    if [ "${def1_disabled}" = "1" ];then
+        ifname1=$(uci get wireless.default_radio1.ifname 2>/dev/null)
+        if [ -n "${ifname1}" ];then
+            hostapd_cli -i $ifname1 disable
+        fi
+    fi
+}
+
 case "$1" in
     start)
         ap_2g_flag="0"
@@ -184,6 +203,33 @@ case "$1" in
         else
             echo "there is no sta to start"
         fi
+
+        # disable interface
+        disable_interface
+    ;;
+    start_wpa)
+        all_sta=
+
+        result=$(ps | grep hostapd.pid | grep -v grep)
+        if [ -n "$result" ]; then
+            killall wpa_supplicant 2>/dev/null
+        fi
+
+        wait_until_conf_file
+        sleep 1
+
+        # start sta
+        if [ -n "${all_sta}" ];then
+            echo "start wpa_supplicant"
+            generate_wpa_supplicant_args "${all_sta}" wpa_args
+            /usr/sbin/wpa_supplicant ${wpa_args}
+        else
+            echo "there is no sta to start"
+        fi
+    ;;
+    stop_wpa)
+        echo "stop wpa_supplicant"
+        killall wpa_supplicant 2>/dev/null
     ;;
     stop)
         echo "stop hostapd and wpa_supplicant"

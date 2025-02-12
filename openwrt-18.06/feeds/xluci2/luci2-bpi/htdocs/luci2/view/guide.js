@@ -31,6 +31,19 @@ L.ui.view.extend({
         params: [ 'cmd' ]
     }),
 
+	lan_ip: L.rpc.declare({
+		object: 'network.interface.lan',
+		method: 'status',
+		expect: { 'ipv4-address': [] },
+		filter: function (data) {
+			var ip = '0';
+			if (data[0]) {
+				ip = data[0].address;
+			}
+			return ip;
+		},
+	}),
+
 	execute: function() {
 		var self = this;
 
@@ -149,7 +162,7 @@ L.ui.view.extend({
 		var s_wan = m_wan.section(L.cbi.NamedSection, 'wan', {});
 
 		p = s_wan.option(L.cbi.ListValue, 'proto', {
-			caption:	L.tr("model"),
+			caption:	L.tr("Mode"),
 			initial:	'dhcp'
 		})
 			.value('dhcp', L.tr("DHCP"))
@@ -160,9 +173,15 @@ L.ui.view.extend({
 		p.save = function(sid){
 			var value = this.formvalue(sid);
 			var ori_value = L.uci.get('network', 'wan', 'proto');
+			L.uci.set('network', 'wan', 'origin_proto',ori_value);
 			if(ori_value == 'bridge' && value != 'bridge'){
 				L.uci.unset('network', 'wan', 'disabled');
-				L.uci.set('network', 'lan', 'ifname', 'eth0.1');
+				L.uci.set('network', 'lan', 'proto', 'static');
+				L.uci.set('network', 'lan', 'proto', 'static');
+				L.uci.load('dhcp').then(function(data) {
+					L.uci.unset('dhcp', 'lan', 'ignore');
+					L.uci.save();
+				});
 			}
 			if(value == 'pppoe'){
 				L.uci.unset('network', 'wan', 'ipaddr');
@@ -171,6 +190,7 @@ L.ui.view.extend({
 				L.uci.set('network', 'wan', 'proto', 'pppoe');
 				var ppp_times = 0;
 				setTimeout(function(){
+					$('#' + id).text(L.tr("Testing"));
 					clearInterval(L.wanstatus_interval);
 					L.ui.setting(true, L.tr("pppoe connecting..."));
 					ppp_interval = setInterval(function() {
@@ -201,35 +221,60 @@ L.ui.view.extend({
 					}, 1000);
 				}, 2000);
 			} else if(value == 'static') {
-				L.uci.unset('network', 'wan', 'username');
-				L.uci.unset('network', 'wan', 'password');
 				L.uci.unset('network', 'wan', 'auto');
 				L.uci.set('network', 'wan', 'proto', 'static');
 			} else if(value == 'dhcp') {
 				L.uci.unset('network', 'wan', 'ipaddr');
 				L.uci.unset('network', 'wan', 'gateway');
 				L.uci.unset('network', 'wan', 'netmask');
-				L.uci.unset('network', 'wan', 'username');
-				L.uci.unset('network', 'wan', 'password');
 				L.uci.unset('network', 'wan', 'auto');
 				L.uci.set('network', 'wan', 'proto', 'dhcp');
 			} else if(value == 'bridge') {
 				L.uci.unset('network', 'wan', 'ipaddr');
 				L.uci.unset('network', 'wan', 'gateway');
 				L.uci.unset('network', 'wan', 'netmask');
-				L.uci.unset('network', 'wan', 'username');
-				L.uci.unset('network', 'wan', 'password');
 				L.uci.unset('network', 'wan', 'auto');
 				L.uci.set('network', 'wan', 'proto', 'bridge');
 				L.uci.set('network', 'wan', 'disabled', '1');
 				L.uci.set('network', 'lan', 'ifname', 'eth0.1 eth0.2');
+				L.uci.set('network','lan','proto','dhcp');
+				L.uci.load('dhcp').then(function() {
+					L.uci.set('dhcp', 'lan', 'ignore', '1');
+					L.uci.save();
+				});
 			}
 			L.uci.save();
 		}
 
+		var lanip='';
+		self.lan_ip().then(function (ip) {
+			lanip = ip;
+		});
+
 		var ipdata = s_wan.option(L.cbi.InputValue, 'ipaddr', {
 			caption:      L.tr("IP address"),
-			datatype:    'ip4addr'
+			datatype:     function(str) {
+
+			if (!L.parseIPv4(str)){
+				return L.tr('Must be a valid IPv4 address');
+			}
+			var ip = lanip.split('.');
+			var parts = str.split('.');
+			var netmask = '255.255.255.0'.split('.');
+			var res0 = parseInt(ip[0]) & parseInt(netmask[0]);
+			var res1 = parseInt(ip[1]) & parseInt(netmask[1]);
+			var res2 = parseInt(ip[2]) & parseInt(netmask[2]);
+			var res3 = parseInt(ip[3]) & parseInt(netmask[3]);
+			var res_gw0 = parseInt(parts[0]) & parseInt(netmask[0]);
+			var res_gw1 = parseInt(parts[1]) & parseInt(netmask[1]);
+			var res_gw2 = parseInt(parts[2]) & parseInt(netmask[2]);
+			var res_gw3 = parseInt(parts[3]) & parseInt(netmask[3]);
+
+			if (res0 === res_gw0 && res1 === res_gw1 && res2 === res_gw2 && res3 === res_gw3) {
+				return L.tr('Must not be in the same segment as the IP address of Lan.');
+			}
+				return true;
+			}
 		}).depends('proto', function(v) { return (v == 'static');});
 
 		e_wan = s_wan.option(L.cbi.InputValue, 'netmask', {
@@ -429,6 +474,41 @@ L.ui.view.extend({
 			});
 		});
 
+		m_wan.on('apply',function(){
+			L.ui.setting(true);
+			let get_val = $("#field_network_wan_wan_proto").val();
+			let origin_proto = L.uci.get('network', 'wan', 'origin_proto');
+			if(get_val == "bridge" && origin_proto !="bridge"){
+				L.ui.setting(false);
+				var form = $('<p />').text(L.tr(`The LAN IP will change when switching from other modes to bridge mode.Please log in using the domain name (http://juovi.wifi/) in two minutes`));
+				L.ui.dialog(L.tr('Tips'), form, {
+						style: 'onlyConfirm',
+						confirm: function() {
+								L.ui.dialog(false);
+								L.ui.setting(true);
+						},
+				});
+				self.do_cmd("/usr/sbin/ip_monitor.sh &");
+			}
+			else if (get_val != "bridge" && origin_proto =="bridge"){
+				L.ui.setting(false);
+				var form = $('<p />').text(L.tr(`The LAN IP will change when switching from bridge mode to other modes.Please log in using the domain name (http://juovi.wifi/) in two minutes`));
+				L.ui.dialog(L.tr('Tips'), form, {
+						style: 'onlyConfirm',
+						confirm: function() {
+							L.ui.dialog(false);
+							L.ui.setting(true);
+						},
+				});
+				self.do_cmd("/usr/sbin/ip_monitor.sh &");
+			}
+			self.do_cmd("/etc/init.d/dnsmasq restart; /etc/init.d/network restart").then(function(v){
+				setTimeout(() => {
+					L.ui.setting(false);
+				}, 1000*40);
+			});
+		});
+
 		// 无线设置
 		var m_wireless = new L.cbi.Map('wireless', {
 			emptytop:    '0px'
@@ -438,7 +518,7 @@ L.ui.view.extend({
 			caption:      L.tr('2.4G')
 		});
 
-		var e_wireless = s_wireless.option(L.cbi.CheckboxValue, 'disabled', {
+		var e_wireless = s_wireless.option(L.cbi.CheckboxValue, 'disabled_hostapd', {
 			caption:      L.tr('Disabled Wifi'),
 			optional:     true
 		});
@@ -455,10 +535,17 @@ L.ui.view.extend({
 		.value('none', L.tr('No encryption'))
 		.value('psk+ccmp', L.tr('WPA Personal (PSK)'))
 		.value('psk2+ccmp', L.tr('WPA2 Personal (PSK)'))
+		.value('psk-mixed', L.tr('WPA/WPA2 Personal (PSK) mixed'))
 		.value('sae', L.tr('WPA3 Personal (SAE)'))
 		.value('sae-mixed', L.tr('WPA2/WPA3 mixed'));
 
 		e_wireless.save = function (sid) {
+			let radio_2_4 = $('#field_wireless_default_radio0_default_radio0_disabled_hostapd').is(':checked');
+				if(radio_2_4){
+					L.ui.do_cmd(`hostapd_cli -i wlan0 disable`);
+				}else{
+					L.ui.do_cmd(`hostapd_cli -i wlan0 enable`);
+				}
 			var encrypt = this.formvalue(sid);
 			L.uci.set('wireless', 'default_radio0', 'encryption', encrypt);
 			if (encrypt == 'sae')
@@ -480,7 +567,7 @@ L.ui.view.extend({
 			caption:      L.tr('5G')
 		});
 
-		var e2_wireless = s2_wireless.option(L.cbi.CheckboxValue, 'disabled', {
+		var e2_wireless = s2_wireless.option(L.cbi.CheckboxValue, 'disabled_hostapd', {
 			caption:      L.tr('Disabled Wifi'),
 			optional:     true
 		});
@@ -497,10 +584,17 @@ L.ui.view.extend({
 		.value('none', L.tr('No encryption'))
 		.value('psk+ccmp', L.tr('WPA Personal (PSK)'))
 		.value('psk2+ccmp', L.tr('WPA2 Personal (PSK)'))
+		.value('psk-mixed', L.tr('WPA/WPA2 Personal (PSK) mixed'))
 		.value('sae', L.tr('WPA3 Personal (SAE)'))
 		.value('sae-mixed', L.tr('WPA2/WPA3 mixed'));
 
 		e2_wireless.save = function (sid) {
+			let radio_5 = $('#field_wireless_default_radio1_default_radio1_disabled_hostapd').is(':checked');
+			if(radio_5){
+				L.ui.do_cmd(`hostapd_cli -i wlan1 disable`);
+			}else{
+				L.ui.do_cmd(`hostapd_cli -i wlan1 enable`);
+			}
 			var encrypt = this.formvalue(sid);
 			L.uci.set('wireless', 'default_radio1', 'encryption', encrypt);
 			if (encrypt == 'sae')
@@ -554,7 +648,29 @@ L.ui.view.extend({
 		var password = s_password.option(L.cbi.PasswordValue, 'password', {
 			caption:     L.tr('Password'),
 			optional:    true,
-			datatype:    'rangelength(5,12)'
+			datatype:     function(str, sid) {
+				var password = '' + $('#field_rpcd___login___login_password').val()
+				var val = '' + str;
+
+				for(var i = 0; i < val.length; i ++)
+				{
+					var c = val.substr(i, 1);
+					var ts = escape(c);
+					if(ts.substring(0, 2) == "%u") {
+						return L.tr('Must void Chinese characters');
+					}
+				}
+
+				if (val.length >= 5 && val.length <= 12) {
+					if(password == val) {
+						return true;
+					} else {
+						return L.tr("Two password inputs must be consistent")
+					}
+				} else {
+					return L.tr('Must be between 5 and 12 characters');
+				}
+			}
 		});
 
 		password.ucivalue = function(sid) {
@@ -590,7 +706,18 @@ L.ui.view.extend({
 			});
 		});
 
-		m_password.insertInto('#password_set');
+		m_password.insertInto('#password_set').then(function(){
+			L.uci.callLoad('luci2').then(function(data) {
+				var lang = data["main"].lang;
+				$("#page_password").find(".common_button_long").text(L.tr("Finish"));
+				$("#page_password").find(".common_button_long").css("right","46px");
+				if(lang == "es") {
+					$("#page_password").find(".backclick").css("right","160px");
+				} else if(lang == "it") {
+					$("#page_password").find(".backclick").css("right","155px");
+				}
+			})
+		});
 
 		function showPage(pageId) {
 			const pages = document.querySelectorAll('.guidepage');

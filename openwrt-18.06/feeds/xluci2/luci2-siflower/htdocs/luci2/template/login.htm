@@ -1,0 +1,55 @@
+<style>
+	.login_box{
+		position: absolute;
+		top: 44%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
+	.login_leadapp{
+		box-shadow: 0 1px 10px 0 rgba(0, 0, 0, 0.25);
+		border-radius: 8px;
+		padding: 30px;
+		min-height: 400px;
+	}
+	.log_til{
+		font-size: 32px;
+		margin-bottom: 70px;
+	}
+</style>
+<div class="wrapper ">
+	<div class="header flex_center custombgcolor">
+		<div class="header_cont">
+			<div class="logo">
+				<img src="" alt="">
+				<div style="color: white;">AC1200路由</div>
+			</div>
+		</div>
+	</div>
+	<div class="main_content">
+		<div class="banner flex_center">
+			<div class="login_box">
+				<div class="main_title">欢迎使用AC1200路由SF19A2890</div>
+				<div class="login_leadapp InputComponent">
+					<div class="log_til">登录</div>
+					<div class="login_inp">
+						<input id="userpassword_ctrl" class="inputArea" autocomplete="off" maxlength="20" placeholder="请输入路由器登录密码" type="password">
+					</div>
+					<div id="loginbtn" class="enter"></div>
+					<div class="login_info">
+						<div id="login_error" style="display: none;">
+							<div>
+								<div class="error_info"></div>
+								<span>密码错误！</span>
+							</div>
+						</div>
+						<div id="forgetpwd_page_link" style="cursor: pointer;">忘记密码？</div>
+						<div class="forget_info" id="forgetpwd_page_tips" style="display: none;">如果忘记密码，请长按reset键恢复出厂设置</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="footer flex_center">
+		<div>AC1200路由</div>
+	</div>
+</div>

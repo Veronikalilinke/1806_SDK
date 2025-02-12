@@ -611,7 +611,30 @@ function LuCI2()
 		for (var i = 0; i < parts.length; i++)
 		{
 			var n = parseInt(parts[i], 10);
+			if (isNaN(n) || n > 254)
+				return undefined;
+
+			num.push(n);
+		}
+
+		return num;
+	};
+
+	this.parseIPv4_notBr = function(str)
+	{
+		if ((typeof(str) != 'string' && !(str instanceof String)) ||
+		    !str.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/))
+			return undefined;
+
+		var num = [ ];
+		var parts = str.split(/\./);
+
+		for (var i = 0; i < parts.length; i++)
+		{
+			var n = parseInt(parts[i], 10);
 			if (isNaN(n) || n > 255)
+				return undefined;
+			if (i == parts.length - 1 && n > 254)
 				return undefined;
 
 			num.push(n);

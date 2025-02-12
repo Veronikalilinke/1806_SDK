@@ -97,7 +97,7 @@ L.ui.view.extend({
 		};
 
 		p = s.option(L.cbi.ListValue, 'proto', {
-			caption:	L.tr("model"),
+			caption:	L.tr("Mode"),
 			initial:	'dhcp'
 		})
 		.value('dhcp', L.tr("DHCP"))
@@ -110,7 +110,7 @@ L.ui.view.extend({
 			var ori_value = L.uci.get('network', 'wan', 'proto');
 			if(ori_value == 'bridge' && value != 'bridge'){
 				L.uci.unset('network', 'wan', 'disabled');
-				L.uci.set('network', 'lan', 'ifname', 'eth0.1');
+				L.uci.set('network', 'lan', 'proto', 'static');
 			}
 			if(value == 'pppoe'){
 				L.uci.unset('network', 'wan', 'ipaddr');
@@ -140,6 +140,7 @@ L.ui.view.extend({
 				L.uci.set('network', 'wan', 'proto', 'bridge');
 				L.uci.set('network', 'wan', 'disabled', '1');
 				L.uci.set('network', 'lan', 'ifname', 'eth0.1 eth0.2');
+				L.uci.set('network','lan','proto','dhcp');
 			}
 			L.uci.save();
 		}
@@ -318,7 +319,7 @@ L.ui.view.extend({
 		};
 
 		uni = s.option(L.cbi.CheckboxValue, 'unicast', {
-			caption:      L.tr("Open unicast method to get ip"),
+			caption:      L.tr("Open unicast to get ip"),
 			optional:     true,
 			description:  L.tr("Do not choose under normal circumstances")
 		}).depends('proto', function(v) { return (v == 'dhcp');});

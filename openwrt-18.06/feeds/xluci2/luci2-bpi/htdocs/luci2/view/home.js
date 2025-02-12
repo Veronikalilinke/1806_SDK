@@ -280,7 +280,93 @@ L.ui.view.extend({
 					});
 				}
 				self.net_sta().then(function (wan) {
-					if (wan == undefined || (L.uci.get('network', 'lan', 'proto') == 'dhcp')) {
+					if(L.uci.get('network', 'wan', 'proto') == 'bridge'){
+						var p1 = $('body').find('.content_status');
+								$('body').find('.router_more').remove();
+								var p2 = $('body').find('.fun_name');
+								var p3 = $('body').find('.hone_connect');
+								$(p1)
+									.prop('class', 'content_status_repeater')
+									.prepend(
+										$('<div />')
+										.addClass('repeater_center_box fl')
+												.append($('<div />').addClass('home_wds_center').css('margin-left','-50px'))
+											.append(
+												$('<div />')
+													.addClass('repeater_status')
+													.css('left', '120px')
+													.append(
+														$('<div />')
+															.css({
+																"width": "100px",
+																"height": "2px",
+																"background": "#FA6F43",
+																"position": "absolute",
+																"top": "16px"
+															})
+													)
+													.append(
+														$('<div />').css({
+															'background-image': 'url("luci2/res/siflower.png")',
+															'margin-left': '120px',
+															'width': '90px',
+															'height': '90px',
+															'position': 'relative',
+															'margin-top': '-25px',
+															'background-position': '50% 62.2%',
+															'background-size': '300%'
+														}),
+													),
+											),
+									)
+									.prepend($('<div />').addClass('repeater_line_box fl').append($('<div />').addClass('home_network').css('margin-left','-60px'))
+										.append($('<div />').addClass('repeater_line left_115')));
+								$(p1).find('.router_wan').remove();
+								$(p1).find('.router_wifi').prop('class','router_wifi fl').css('margin-left', '100px');
+								$(p1).find('.router_deviceCount').prop('class','router_deviceCount fl').css('margin-left', '0px');
+								$(p2).empty().prop('class', 'repeater_name');
+								$(p2)
+									.append(
+										$('<p />')
+											.css({
+												'margin-left': '42px',
+												float: 'left',
+											})
+											.text(L.tr("Internet")),
+									)
+									.append(
+										$('<p />')
+											.css({
+												'margin-left': '108px',
+												float: 'left',
+											})
+											.text(L.tr("Superior Router")),
+									)
+									.append(
+										$('<p />')
+											.css({
+												'margin-left': '95px',
+												float: 'left',
+											})
+											.text(L.tr("This device")),
+									)
+									.append(
+										$('<p />')
+											.css({
+												'margin-left': '114px',
+												float: 'left',
+											})
+											.text(L.tr("Devices")),
+									);
+								$(p3).prop('class', 'hone_connect hone_connect_repeater');
+								$(p3).find('.wanip').remove();
+								$(p3).find('.system').css('border', 'none');
+								$(p3).find('.wantime').find('.descripe').text(L.tr("Bridge access method"));
+								$(p3)
+									.find('.wantime')
+									.find('.content')
+									.text(L.tr("Wired bridging"));
+					}else if (wan == undefined || (L.uci.get('network', 'lan', 'proto') == 'dhcp')) {
 						self.repeater_sta().then(function (lan) {
 							if (lan.up == false) {
 								var wwanfail='<div class="home_network"></div><div id="conn_sta" class="repeater_connect marginleft_15 fl left_130"></div><p id = "conn_info" class="marginleft_15 left_130" >'+ L.tr("Error interface, please check the configuration.")+'</p>';
