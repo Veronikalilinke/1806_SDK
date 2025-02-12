@@ -1920,6 +1920,34 @@ int32_t save_version_to_factory(char *version)
     return 0;
 }
 
+int32_t save_temp_to_flash(char *tmpdata)
+{
+	struct iwreq wrq;
+	struct sfcfghdr tmp;
+	int offset = 174;
+	int length = 2;
+	memset(&wrq, 0, sizeof(struct iwreq));
+	memset(&tmp, 0, sizeof(struct sfcfghdr));
+	// cmd ate band
+	tmp.magic_no = SFCFG_MAGIC_NO;
+	tmp.comand_type = SFCFG_CMD_ATE_SAVE_DATA_TO_FLASH;
+	tmp.comand_id   = SFCFG_CMD_ATE_SAVE_DATA_TO_FLASH;
+	tmp.length      = 2;
+	tmp.sequence    = 1;
+
+	sprintf(tmp.data,"%d",offset);
+	memcpy(&tmp.data[4],tmpdata,length);
+	printf("tmpdata= %d---------\n", tmpdata[0]);
+
+	wrq.u.data.pointer = (caddr_t)&tmp;
+	wrq.u.data.length = sizeof(struct sfcfghdr) - sizeof(((struct sfcfghdr *)0)->data) + 10;
+
+	if(do_ioctl(SFCFG_PRIV_IOCTL_ATE, &wrq) < 0){
+		printf("SFCFG_PRIV_IOCTL_ATE ioctl SFCFG_CMD_ATE_SAVE_DATA_TO_FLASH failed\n");
+		return -1;
+	}
+	return 0;
+}
 
 static void usage()
 {
@@ -2534,6 +2562,43 @@ BEGAIN:
 			cali_table_write_flg = 1;
 			cali_table_part = LB_ANT1;
 			goto BEGAIN;
+		}
+		else if (!strncasecmp(buffer,"ate_cmd get_current_temp",24)){
+			FILE *file;
+			char buffer[16];
+
+			file = fopen("/sys/kernel/debug/aetnensis/temperature", "r");
+			if (file == NULL) {
+				perror("Unable to open file");
+			}
+
+			if (fgets(buffer, sizeof(buffer), file) != NULL) {
+				snprintf(bufsend,1023,"get temp is: %s\n",buffer);
+				write(nfp,bufsend,strlen(bufsend));
+				fclose(file);
+				goto BEGAIN;
+			} else {
+				perror("Unable to read file");
+			}
+			ret = 0;
+			fclose(file);
+		}
+		else if (!strncasecmp(buffer,"ate_cmd save temp ",18)){
+			char temp[2] = "0";
+			if (sscanf(buffer + 18, "%d", &temp[0]) == 1) {
+				printf("temp value: %d\n", temp[0]);
+				if(temp[0] < 0)
+				{
+					printf("----temperature is %d degrees below zero!!----\n",temp[0]);
+					temp[0] = ~temp[0] + 1;
+					//if use temp below zero ,set the flag 1,default 0;
+					temp[1] = 1;
+				}
+				if(!save_temp_to_flash(temp))
+					printf("----save temperature ok!----\n");
+			} else {
+				printf("Failed to extract a valid integer.\n");
+			}
 		}
 		else if(!strncasecmp(buffer,tmp,7)){
 			printf("ate cmd receive!\n");
