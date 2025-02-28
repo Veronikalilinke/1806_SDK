@@ -131,6 +131,9 @@
 			{
 				ftr.append(L.ui.button(L.tr('Close'), 'primary')
 					.attr('disabled', true));
+			}else if (options.style == 'onlyConfirm'){
+				ftr.append(L.ui.button(L.tr('Ok'), 'primary')
+					.click(options.confirm || function() { L.ui.dialog(false) }));
 			}
 
 			if (options.wide)
@@ -1729,30 +1732,42 @@
 			m.on('apply',function(){
 				let get_val = $("#field_network_wan_wan_proto").val();
 				let origin_proto = L.uci.get('network', 'wan', 'origin_proto');
-				if(get_val == "bridge" && origin_proto !="bridge"){
-					L.ui.setting(false);
-					var form = $('<p />').text(L.tr(`The LAN IP will change when switching from other modes to bridge mode.Guest WiFi will be turned off.Please log in using the new LAN IP in two minutes`));
-					L.ui.dialog(L.tr('Tips'), form, {
-						style: 'onlyConfirm',
-							confirm: function() {
+				let get_http = "";
+
+				L.ui.callOption('basic_setting', 'vendor', 'hosts').then(function (value) {
+					if (value.length > 1){
+						get_http = 'http://'+value;
+					}
+
+					if(get_val == "bridge" && origin_proto !="bridge"){
+						L.ui.setting(false);
+						var form = $('<p />').text(L.tr(`The LAN IP will change when switching from other modes to bridge mode.Guest WiFi will be turned off.Please log in using the domain name "%s" in two minutes`).format(get_http));
+						L.ui.dialog(L.tr('Tips'), form, {
+								style: 'onlyConfirm',
+								confirm: function() {
+										L.ui.dialog(false);
+										L.ui.setting(true);
+								},
+						});
+						self.do_cmd("/usr/sbin/ip_monitor.sh &");
+					}else if (get_val != "bridge" && origin_proto =="bridge"){
+						L.ui.setting(false);
+						var form = $('<p />').text(L.tr(`The LAN IP will change when switching from bridge mode to other modes.Please log in using the domain name "%s" in two minutes`).format(get_http));
+						L.ui.dialog(L.tr('Tips'), form, {
+								style: 'onlyConfirm',
+								confirm: function() {
 									L.ui.dialog(false);
 									L.ui.setting(true);
-							},
-					});
-				}
-				else if (get_val != "bridge" && origin_proto =="bridge"){
-					L.ui.setting(false);
-					var form = $('<p />').text(L.tr(`The LAN IP will change when switching from bridge mode to other modes.Please log in using the new LAN IP in two minutes`));
-					L.ui.dialog(L.tr('Tips'), form, {
-							style: 'confirm',
-							confirm: function() {
-								L.ui.dialog(false);
-								L.ui.setting(true, L.tr("Waiting for jump, please wait..."));
-								location.replace(location.protocol+'//'+now);
-							},
-					});
-				}
-				self.command("/etc/init.d/dnsmasq restart; /etc/init.d/network restart");
+								},
+						});
+						self.do_cmd("/usr/sbin/ip_monitor.sh &");
+					}
+				})
+				self.command("/etc/init.d/dnsmasq restart; /etc/init.d/network restart").then(function(v){
+					setTimeout(() => {
+						L.ui.setting(false);
+					}, 1000*40);
+				});
 			});
 		},
 
