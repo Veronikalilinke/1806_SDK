@@ -167,7 +167,9 @@ L.ui.view.extend({
 				$('#more').click();
 			});
 			$('.router_deviceCount').click(function () {
-				$('#device').click();
+				if(proto.value !== "bridge"){
+					$('#device').click();
+				}
 			});
 			function fresht() {
 				self.sys_info().then(function (sys) {

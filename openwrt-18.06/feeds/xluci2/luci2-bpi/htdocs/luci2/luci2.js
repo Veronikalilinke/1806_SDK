@@ -611,7 +611,7 @@ function LuCI2()
 		for (var i = 0; i < parts.length; i++)
 		{
 			var n = parseInt(parts[i], 10);
-			if (isNaN(n) || n > 254)
+			if (isNaN(n) || n > 255)
 				return undefined;
 
 			num.push(n);
